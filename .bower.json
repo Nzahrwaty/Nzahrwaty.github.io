@@ -1,42 +1,23 @@
 {
-  "name": "bootstrap-wysiwyg",
-  "description": "A tiny Bootstrap and jQuery based WYSIWYG rich text editor based on the browser function execCommand.",
-  "version": "1.0.5",
-  "keywords": [
-    "css",
-    "js",
-    "responsive",
-    "front-end",
-    "web",
-    "wysiwyg",
-    "editor"
-  ],
-  "homepage": "https://github.com/steveathon/bootstrap-wysiwyg",
-  "main": [
-    "js/bootstrap-wysiwyg.min.js"
-  ],
-  "ignore": [
-    ".*",
-    "index.html",
-    "CHANGES",
-    "LICENSE",
-    "SUPPORTED"
-  ],
+  "name": "Chart.js",
+  "version": "2.1.4",
+  "description": "Simple HTML5 Charts using the canvas element",
+  "homepage": "https://github.com/chartjs/Chart.js",
+  "author": "nnnick",
   "license": "MIT",
-  "dependencies": {
-    "jquery": "~2.1.4",
-    "jquery.hotkeys": "https://github.com/jeresig/jquery.hotkeys.git#master",
-    "fontawesome": "~4.5.0",
-    "bootstrap": "~3.3.5",
-    "google-code-prettify": "~1.0.4"
+  "main": [
+    "dist/Chart.js"
+  ],
+  "devDependencies": {
+    "jquery": "~2.1.4"
   },
-  "_release": "1.0.5",
+  "_release": "2.1.4",
   "_resolution": {
     "type": "version",
-    "tag": "1.0.5",
-    "commit": "b4b774eddcc69b00778361eb98f170f633260636"
+    "tag": "v2.1.4",
+    "commit": "40d76b6a7ba14aeac69b05ad15d713c3402867b2"
   },
-  "_source": "https://github.com/steveathon/bootstrap-wysiwyg.git",
-  "_target": "^1.0.5",
-  "_originalSource": "bootstrap-wysiwyg-steveathon"
+  "_source": "https://github.com/nnnick/Chart.js.git",
+  "_target": "^2.0.2",
+  "_originalSource": "Chart.js"
 }

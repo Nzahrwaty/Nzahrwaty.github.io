@@ -1,2 +1,13 @@
+
+.DS_Store
+
 node_modules/*
-test/*
+custom/*
+
+docs/index.md
+
+bower_components/
+
+coverage/*
+.idea
+nbproject/*

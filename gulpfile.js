@@ -1,67 +1,226 @@
-// Include gulp
-var gulp = require('gulp');
+var gulp = require('gulp'),
+  concat = require('gulp-concat'),
+  uglify = require('gulp-uglify'),
+  util = require('gulp-util'),
+  jshint = require('gulp-jshint'),
+  size = require('gulp-size'),
+  connect = require('gulp-connect'),
+  replace = require('gulp-replace'),
+  htmlv = require('gulp-html-validator'),
+  insert = require('gulp-insert'),
+  inquirer = require('inquirer'),
+  semver = require('semver'),
+  exec = require('child_process').exec,
+  fs = require('fs'),
+  package = require('./package.json'),
+  bower = require('./bower.json'),
+  karma = require('gulp-karma'),
+  browserify = require('browserify'),
+  streamify = require('gulp-streamify'),
+  source = require('vinyl-source-stream'),
+  merge = require('merge-stream');
 
-// Include our plugins
-var jshint = require('gulp-jshint');
-var bootlint = require('gulp-bootlint');
-var uglify = require('gulp-uglify');
-var rename = require('gulp-rename');
-var bootlint = require('gulp-bootlint');
-var html5lint = require('gulp-html5-lint');
+var srcDir = './src/';
+var outDir = './dist/';
 
-var checkPages = require('check-pages');
+var header = "/*!\n" +
+  " * Chart.js\n" +
+  " * http://chartjs.org/\n" +
+  " * Version: {{ version }}\n" +
+  " *\n" +
+  " * Copyright 2016 Nick Downie\n" +
+  " * Released under the MIT license\n" +
+  " * https://github.com/chartjs/Chart.js/blob/master/LICENSE.md\n" +
+  " */\n";
 
-// Default task
-gulp.task('default', ['js', 'html', 'bootstrap', 'links', 'minify']);
+var preTestFiles = [
+  './node_modules/moment/min/moment.min.js',
+];
 
-// Lint our JavaScript files
-gulp.task('js', function () {
-	return gulp.src('src/**/*.js')
-		.pipe(jshint())
-		.pipe(jshint.reporter('default'));
-});
+var testFiles = [
+  './test/mockContext.js',
+  './test/*.js',
 
-gulp.task('html', function () {
-	return gulp.src(['*.html', 'examples/*.html'])
-		.pipe(html5lint());
-});
+  // Disable tests which need to be rewritten based on changes introduced by
+  // the following changes: https://github.com/chartjs/Chart.js/pull/2346
+  '!./test/core.layoutService.tests.js',
+  '!./test/defaultConfig.tests.js',
+];
 
-// Lint our Bootstrap files
-gulp.task('bootstrap', function () {
-	return gulp.src(['*.html', 'examples/**/*.html'])
-		.pipe(bootlint());
-});
+gulp.task('build', buildTask);
+gulp.task('coverage', coverageTask);
+gulp.task('watch', watchTask);
+gulp.task('bump', bumpTask);
+gulp.task('release', ['build'], releaseTask);
+gulp.task('jshint', jshintTask);
+gulp.task('test', ['jshint', 'validHTML', 'unittest']);
+gulp.task('size', ['library-size', 'module-sizes']);
+gulp.task('server', serverTask);
+gulp.task('validHTML', validHTMLTask);
+gulp.task('unittest', unittestTask);
+gulp.task('unittestWatch', unittestWatchTask);
+gulp.task('library-size', librarySizeTask);
+gulp.task('module-sizes', moduleSizesTask);
+gulp.task('_open', _openTask);
+gulp.task('dev', ['server', 'default']);
 
-// Check for broken and invalid links in the web pages
-gulp.task('links', function (callback) {
-	var options = {
-		pageUrls: [
-			'index.html',
-			'examples/basic.html',
-			'examples/clear-formatting.html',
-			'examples/events.html',
-			'examples/form-post.html',
-			'examples/formatblock-example.html',
-			'examples/html-editor.html',
-			'examples/multiple-editors.html',
-			'examples/simple-toolbar.html'
-		],
-		checkLinks: true,
-		summary: true
-	};
+gulp.task('default', ['build', 'watch']);
 
-	checkPages(console, options, callback);
-});
 
-// Minify our JS
-gulp.task('minify', function () {
-    return gulp.src('src/*.js')
-		.pipe(uglify())
-        .pipe(rename('bootstrap-wysiwyg.min.js'))
-        .pipe(gulp.dest('js'));
-});
+function buildTask() {
 
-// Watch files for changes
-gulp.task('watch', function () {
-    gulp.watch(['src/*.js', 'index.html', 'examples/*.html'], ['js', 'html', 'bootstrap', 'links', 'minify']);
-});
+  var bundled = browserify('./src/chart.js')
+    .bundle()
+    .pipe(source('Chart.bundle.js'))
+    .pipe(insert.prepend(header))
+    .pipe(streamify(replace('{{ version }}', package.version)))
+    .pipe(gulp.dest(outDir))
+    .pipe(streamify(uglify()))
+    .pipe(insert.prepend(header))
+    .pipe(streamify(replace('{{ version }}', package.version)))
+    .pipe(streamify(concat('Chart.bundle.min.js')))
+    .pipe(gulp.dest(outDir));
+
+  var nonBundled = browserify('./src/chart.js')
+    .ignore('moment')
+    .bundle()
+    .pipe(source('Chart.js'))
+    .pipe(insert.prepend(header))
+    .pipe(streamify(replace('{{ version }}', package.version)))
+    .pipe(gulp.dest(outDir))
+    .pipe(streamify(uglify()))
+    .pipe(insert.prepend(header))
+    .pipe(streamify(replace('{{ version }}', package.version)))
+    .pipe(streamify(concat('Chart.min.js')))
+    .pipe(gulp.dest(outDir));
+
+  return merge(bundled, nonBundled);
+
+}
+
+/*
+ *  Usage : gulp bump
+ *  Prompts: Version increment to bump
+ *  Output: - New version number written into package.json & bower.json
+ */
+function bumpTask(complete) {
+  util.log('Current version:', util.colors.cyan(package.version));
+  var choices = ['major', 'premajor', 'minor', 'preminor', 'patch', 'prepatch', 'prerelease'].map(function(versionType) {
+    return versionType + ' (v' + semver.inc(package.version, versionType) + ')';
+  });
+  inquirer.prompt({
+    type: 'list',
+    name: 'version',
+    message: 'What version update would you like?',
+    choices: choices
+  }, function(res) {
+    var increment = res.version.split(' ')[0],
+      newVersion = semver.inc(package.version, increment),
+      oldVersion = package.version;
+
+    // Set the new versions into the bower/package object
+    package.version = newVersion;
+    bower.version = newVersion;
+
+    // Write these to their own files, then build the output
+    fs.writeFileSync('package.json', JSON.stringify(package, null, 2));
+    fs.writeFileSync('bower.json', JSON.stringify(bower, null, 2));
+    
+    var oldCDN = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/'+oldVersion+'/Chart.min.js',
+      newCDN = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/'+newVersion+'/Chart.min.js';
+    
+    gulp.src(['./README.md'])
+      .pipe(replace(oldCDN, newCDN))
+      .pipe(gulp.dest('./'));
+
+    complete();
+  });
+}
+
+
+function releaseTask() {
+  exec('git tag -a v' + package.version);
+}
+
+
+function jshintTask() {
+  return gulp.src(srcDir + '**/*.js')
+    .pipe(jshint('config.jshintrc'))
+    .pipe(jshint.reporter('jshint-stylish'))
+    .pipe(jshint.reporter('fail'));
+}
+
+
+function validHTMLTask() {
+  return gulp.src('samples/*.html')
+    .pipe(htmlv());
+}
+
+function startTest() {
+  var files = ['./src/**/*.js'];
+  Array.prototype.unshift.apply(files, preTestFiles);
+  Array.prototype.push.apply(files, testFiles);
+  return files;
+}
+
+function unittestTask() {
+  return gulp.src(startTest())
+    .pipe(karma({
+      configFile: 'karma.conf.ci.js',
+      action: 'run'
+    }));
+}
+
+function unittestWatchTask() {
+  return gulp.src(startTest())
+    .pipe(karma({
+      configFile: 'karma.conf.js',
+      action: 'watch'
+    }));
+}
+
+function coverageTask() {
+  return gulp.src(startTest())
+    .pipe(karma({
+      configFile: 'karma.coverage.conf.js',
+      action: 'run'
+    }));
+}
+
+function librarySizeTask() {
+  return gulp.src('dist/Chart.bundle.min.js')
+    .pipe(size({
+      gzip: true
+    }));
+}
+
+function moduleSizesTask() {
+  return gulp.src(srcDir + '**/*.js')
+    .pipe(uglify({
+      preserveComments: 'some'
+    }))
+    .pipe(size({
+      showFiles: true,
+      gzip: true
+    }));
+}
+
+function watchTask() {
+  if (util.env.test) {
+    return gulp.watch('./src/**', ['build', 'unittest', 'unittestWatch']);
+  }
+  return gulp.watch('./src/**', ['build']);
+}
+
+function serverTask() {
+  connect.server({
+    port: 8000
+  });
+}
+
+// Convenience task for opening the project straight from the command line
+
+function _openTask() {
+  exec('open http://localhost:8000');
+  exec('subl .');
+}

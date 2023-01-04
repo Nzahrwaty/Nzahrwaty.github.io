@@ -1,33 +1,14 @@
 {
-  "name": "bootstrap-wysiwyg",
-  "description": "A tiny Bootstrap and jQuery based WYSIWYG rich text editor based on the browser function execCommand.",
-  "version": "1.0.4",
-  "keywords": [
-    "css",
-    "js",
-    "responsive",
-    "front-end",
-    "web",
-    "wysiwyg",
-    "editor"
-  ],
-  "homepage": "https://github.com/steveathon/bootstrap-wysiwyg",
-  "main": [
-    "js/bootstrap-wysiwyg.min.js"
-  ],
-  "ignore": [
-    ".*",
-    "index.html",
-    "CHANGES",
-    "LICENSE",
-    "SUPPORTED"
-  ],
+  "name": "Chart.js",
+  "version": "2.1.4",
+  "description": "Simple HTML5 Charts using the canvas element",
+  "homepage": "https://github.com/chartjs/Chart.js",
+  "author": "nnnick",
   "license": "MIT",
-  "dependencies": {
-    "jquery": "~2.1.4",
-    "jquery.hotkeys": "https://github.com/jeresig/jquery.hotkeys.git#master",
-    "fontawesome": "~4.5.0",
-    "bootstrap": "~3.3.5",
-    "google-code-prettify": "~1.0.4"
+  "main": [
+    "dist/Chart.js"
+  ],
+  "devDependencies": {
+    "jquery": "~2.1.4"
   }
 }
