@@ -1,23 +1,46 @@
 {
-  "name": "Chart.js",
-  "version": "2.1.4",
-  "description": "Simple HTML5 Charts using the canvas element",
-  "homepage": "https://github.com/chartjs/Chart.js",
-  "author": "nnnick",
-  "license": "MIT",
+  "name": "datatables.net",
+  "description": "DataTables for jQuery ",
   "main": [
-    "dist/Chart.js"
+    "js/jquery.dataTables.js"
   ],
-  "devDependencies": {
-    "jquery": "~2.1.4"
+  "keywords": [
+    "filter",
+    "sort",
+    "DataTables",
+    "jQuery",
+    "table",
+    "DataTables"
+  ],
+  "dependencies": {
+    "jquery": ">=1.7"
   },
-  "_release": "2.1.4",
+  "moduleType": [
+    "globals",
+    "amd",
+    "node"
+  ],
+  "ignore": [
+    "composer.json",
+    "datatables.json",
+    "package.json"
+  ],
+  "authors": [
+    {
+      "name": "SpryMedia Ltd",
+      "homepage": "https://datatables.net"
+    }
+  ],
+  "homepage": "https://datatables.net",
+  "license": "MIT",
+  "version": "1.10.12",
+  "_release": "1.10.12",
   "_resolution": {
     "type": "version",
-    "tag": "v2.1.4",
-    "commit": "40d76b6a7ba14aeac69b05ad15d713c3402867b2"
+    "tag": "1.10.12",
+    "commit": "f938fceb3fbb5b63a0a4c8bde3755dbc61722c2f"
   },
-  "_source": "https://github.com/nnnick/Chart.js.git",
-  "_target": "^2.0.2",
-  "_originalSource": "Chart.js"
+  "_source": "https://github.com/DataTables/Dist-DataTables.git",
+  "_target": "^1.10.11",
+  "_originalSource": "datatables.net"
 }

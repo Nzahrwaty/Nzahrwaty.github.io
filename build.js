@@ -1,87 +1,118 @@
-var pkg = require('./package.json');
-var fs = require('fs');
-var ugly = require('uglify-js');
-var jshint = require('jshint').JSHINT;
-var babel = require('babel');
-var gaze = require('gaze');
+    build: function () {
+      var options = this.options;
+      var $this = this.$element;
+      var $clone = this.$clone;
+      var $cropper;
+      var $cropBox;
+      var $face;
 
-function writeBower() {
-	var bower = {
-		name: pkg.config.bower.name,
-		description: pkg.description,
-		dependencies: pkg.dependencies,
-		keywords: pkg.keywords,
-		authors: [pkg.author],
-		license: pkg.license,
-		homepage: pkg.homepage,
-		ignore: pkg.config.bower.ignore,
-		repository: pkg.repository,
-		main: pkg.main,
-		moduleType: pkg.config.bower.moduleType,
-	};
-	fs.writeFile('bower.json', JSON.stringify(bower, null, '\t'));
-	return true;
-}
+      if (!this.isLoaded) {
+        return;
+      }
 
-function lint(full) {
-	jshint(full.toString(), {
-		browser: true,
-		undef: true,
-		unused: true,
-		immed: true,
-		eqeqeq: true,
-		eqnull: true,
-		noarg: true,
-		predef: ['define', 'module', 'exports', 'Set']
-	});
+      // Unbuild first when replace
+      if (this.isBuilt) {
+        this.unbuild();
+      }
 
-	if (jshint.errors.length) {
-		jshint.errors.forEach(function (err) {
-			console.log(err.line+':'+err.character+' '+err.reason);
-		});
-	} else {
-		console.log('linted')
-	}
+      // Create cropper elements
+      this.$container = $this.parent();
+      this.$cropper = $cropper = $(Cropper.TEMPLATE);
+      this.$canvas = $cropper.find('.cropper-canvas').append($clone);
+      this.$dragBox = $cropper.find('.cropper-drag-box');
+      this.$cropBox = $cropBox = $cropper.find('.cropper-crop-box');
+      this.$viewBox = $cropper.find('.cropper-view-box');
+      this.$face = $face = $cropBox.find('.cropper-face');
 
-	return true;
-}
+      // Hide the original image
+      $this.addClass(CLASS_HIDDEN).after($cropper);
 
-function build(code) {
-	var minified = ugly.minify(code, {fromString: true}).code;
-	var header = [
-		'/*!',
-		'	'+pkg.config.title+' '+pkg.version,
-		'	license: MIT',
-		'	'+pkg.homepage,
-		'*/',
-		''
-	].join('\n');
+      // Show the clone image if is hidden
+      if (!this.isImg) {
+        $clone.removeClass(CLASS_HIDE);
+      }
 
-	fs.writeFile('dist/'+pkg.config.filename+'.js', header+code);
-	fs.writeFile('dist/'+pkg.config.filename+'.min.js', header+minified);
-	writeBower();
-	
-	console.log('dist built');
-}
+      this.initPreview();
+      this.bind();
 
-function transform(filepath) {
-	babel.transformFile(filepath, {modules: 'umd'}, function (err,res) {
-		if (err) {
-			return console.log(err);
-		} else {
-			lint(res.code);
-			build(res.code);
-		}
-	});
-}
+      options.aspectRatio = max(0, options.aspectRatio) || NaN;
+      options.viewMode = max(0, min(3, round(options.viewMode))) || 0;
 
-gaze('src/'+pkg.config.filename+'.js', function(err, watcher){
-	// On file changed
-	this.on('changed', function(filepath) {
-		transform(filepath);
-	});
+      if (options.autoCrop) {
+        this.isCropped = true;
 
-	console.log('watching');
-});
+        if (options.modal) {
+          this.$dragBox.addClass(CLASS_MODAL);
+        }
+      } else {
+        $cropBox.addClass(CLASS_HIDDEN);
+      }
 
-transform('src/'+pkg.config.filename+'.js');
+      if (!options.guides) {
+        $cropBox.find('.cropper-dashed').addClass(CLASS_HIDDEN);
+      }
+
+      if (!options.center) {
+        $cropBox.find('.cropper-center').addClass(CLASS_HIDDEN);
+      }
+
+      if (options.cropBoxMovable) {
+        $face.addClass(CLASS_MOVE).data(DATA_ACTION, ACTION_ALL);
+      }
+
+      if (!options.highlight) {
+        $face.addClass(CLASS_INVISIBLE);
+      }
+
+      if (options.background) {
+        $cropper.addClass(CLASS_BG);
+      }
+
+      if (!options.cropBoxResizable) {
+        $cropBox.find('.cropper-line, .cropper-point').addClass(CLASS_HIDDEN);
+      }
+
+      this.setDragMode(options.dragMode);
+      this.render();
+      this.isBuilt = true;
+      this.setData(options.data);
+      $this.one(EVENT_BUILT, options.built);
+
+      // Trigger the built event asynchronously to keep `data('cropper')` is defined
+      setTimeout($.proxy(function () {
+        this.trigger(EVENT_BUILT);
+        this.isCompleted = true;
+      }, this), 0);
+    },
+
+    unbuild: function () {
+      if (!this.isBuilt) {
+        return;
+      }
+
+      this.isBuilt = false;
+      this.isCompleted = false;
+      this.initialImage = null;
+
+      // Clear `initialCanvas` is necessary when replace
+      this.initialCanvas = null;
+      this.initialCropBox = null;
+      this.container = null;
+      this.canvas = null;
+
+      // Clear `cropBox` is necessary when replace
+      this.cropBox = null;
+      this.unbind();
+
+      this.resetPreview();
+      this.$preview = null;
+
+      this.$viewBox = null;
+      this.$cropBox = null;
+      this.$dragBox = null;
+      this.$canvas = null;
+      this.$container = null;
+
+      this.$cropper.remove();
+      this.$cropper = null;
+    },
