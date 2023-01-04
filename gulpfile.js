@@ -1,99 +1,67 @@
-// Utilities
-var fs = require('fs');
-
-// Gulp
+// Include gulp
 var gulp = require('gulp');
 
-// Gulp plugins
-var gutil = require('gulp-util');
-var concat = require('gulp-concat');
-var header = require('gulp-header');
-var autoprefixer = require('gulp-autoprefixer');
-var runSequence = require('run-sequence');
-var minify = require('gulp-cssnano');
+// Include our plugins
+var jshint = require('gulp-jshint');
+var bootlint = require('gulp-bootlint');
+var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
+var bootlint = require('gulp-bootlint');
+var html5lint = require('gulp-html5-lint');
 
-// Misc/global vars
-var pkg = JSON.parse(fs.readFileSync('package.json'));
-var activatedAnimations = activateAnimations();
+var checkPages = require('check-pages');
 
-// Task options
-var opts = {
-  destPath: './',
-  concatName: 'animate.css',
+// Default task
+gulp.task('default', ['js', 'html', 'bootstrap', 'links', 'minify']);
 
-  autoprefixer: {
-    browsers: ['last 2 versions'],
-    cascade: false
-  },
-
-  minRename: {
-    suffix: '.min'
-  },
-
-  banner: [
-    '@charset "UTF-8";\n',
-    '/*!',
-    ' * <%= name %> -<%= homepage %>',
-    ' * Version - <%= version %>',
-    ' * Licensed under the MIT license - http://opensource.org/licenses/MIT',
-    ' *',
-    ' * Copyright (c) <%= new Date().getFullYear() %> <%= author.name %>',
-    ' */\n\n'
-  ].join('\n')
-};
-
-// ----------------------------
-// Gulp task definitions
-// ----------------------------
-
-gulp.task('default', function() {
-  runSequence('createCSS', 'addHeader');
+// Lint our JavaScript files
+gulp.task('js', function () {
+	return gulp.src('src/**/*.js')
+		.pipe(jshint())
+		.pipe(jshint.reporter('default'));
 });
 
-gulp.task('createCSS', function() {
-  return gulp.src(activatedAnimations)
-    .pipe(concat(opts.concatName))
-    .pipe(autoprefixer(opts.autoprefixer))
-    .pipe(gulp.dest(opts.destPath))
-    .pipe(rename(opts.minRename))
-    .pipe(minify({reduceIdents: {keyframes: false}}))
-    .pipe(gulp.dest(opts.destPath));
+gulp.task('html', function () {
+	return gulp.src(['*.html', 'examples/*.html'])
+		.pipe(html5lint());
 });
 
-gulp.task('addHeader', function() {
-  return gulp.src('*.css')
-    .pipe(header(opts.banner, pkg))
-    .pipe(gulp.dest(opts.destPath));
+// Lint our Bootstrap files
+gulp.task('bootstrap', function () {
+	return gulp.src(['*.html', 'examples/**/*.html'])
+		.pipe(bootlint());
 });
 
-// ----------------------------
-// Helpers/functions
-// ----------------------------
+// Check for broken and invalid links in the web pages
+gulp.task('links', function (callback) {
+	var options = {
+		pageUrls: [
+			'index.html',
+			'examples/basic.html',
+			'examples/clear-formatting.html',
+			'examples/events.html',
+			'examples/form-post.html',
+			'examples/formatblock-example.html',
+			'examples/html-editor.html',
+			'examples/multiple-editors.html',
+			'examples/simple-toolbar.html'
+		],
+		checkLinks: true,
+		summary: true
+	};
 
-// Read the config file and return an array of the animations to be activated
-function activateAnimations() {
-  var categories = JSON.parse(fs.readFileSync('animate-config.json')),
-    category, files, file,
-    target = [ 'source/_base.css' ],
-    count = 0;
+	checkPages(console, options, callback);
+});
 
-  for (category in categories) {
-    if (categories.hasOwnProperty(category)) {
-      files = categories[category];
+// Minify our JS
+gulp.task('minify', function () {
+    return gulp.src('src/*.js')
+		.pipe(uglify())
+        .pipe(rename('bootstrap-wysiwyg.min.js'))
+        .pipe(gulp.dest('js'));
+});
 
-      for (var i = 0; i < files.length; ++i) {
-        target.push('source/' + category + '/' + files[i] + '.css');
-        count += 1;
-      }
-    }
-  }
-
-  if (!count) {
-    gutil.log('No animations activated.');
-  } else {
-    gutil.log(count + (count > 1 ? ' animations' : ' animation') + ' activated.');
-  }
-
-  return target;
-}
+// Watch files for changes
+gulp.task('watch', function () {
+    gulp.watch(['src/*.js', 'index.html', 'examples/*.html'], ['js', 'html', 'bootstrap', 'links', 'minify']);
+});
