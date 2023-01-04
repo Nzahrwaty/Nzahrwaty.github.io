@@ -1,8 +1,8 @@
-# Responsive for DataTables 
+# Scroller for DataTables with styling for [Bootstrap](http://getbootstrap.com/)
 
-This package contains distribution files for the [Responsive extension](https://datatables.net/extensions/responsive) for [DataTables](https://datatables.net/). Only the core software for this library is contained in this package - to be correctly styled, a styling package for Responsive must also be included. Styling options include DataTable's native styling, [Bootstrap](http://getboostrap.com) and [Foundation](http://foundation.zurb.com/).
+This package contains distribution files required to style [Scroller extension](https://datatables.net/extensions/scroller) for [DataTables](https://datatables.net/) with styling for [Bootstrap](http://getbootstrap.com/).
 
-In the modern world of responsive web design tables can often cause a particular problem for designers due to their row based layout. Responsive is an extension for DataTables that resolves that problem by optimising the table's layout for different screen sizes through the dynamic insertion and removal of columns from the table.
+Scroller is a virtual rendering plug-in for DataTables which allows large datasets to be drawn on screen very quickly. Virtual rendering means is that only the visible portion of the table is drawn, while the scrolling container gives the visual impression that the whole table is visible, allowing excellent browser performance.
 
 
 ## Installation
@@ -14,18 +14,18 @@ For inclusion of this library using a standard `<script>` tag, rather than using
 ### npm
 
 ```
-npm install datatables.net-responsive
+npm install datatables.net-scroller-bs
 ```
 
 ```
 var $ = require( 'jquery' );
-require( 'datatables.net-responsive' )( window, $ );
+require( 'datatables.net-scroller-bs' )( window, $ );
 ```
 
 ### bower
 
 ```
-bower install --save datatables.net-responsive
+bower install --save datatables.net-scroller-bs
 ```
 
 
@@ -42,7 +42,7 @@ Support for DataTables is available through the [DataTables forums](//datatables
 
 ### Contributing
 
-If you are thinking of contributing code to DataTables, first of all, thank you! All fixes, patches and enhancements to DataTables are very warmly welcomed. This repository is a distribution repo, so patches and issues sent to this repo will not be accepted. Instead, please direct pull requests to the [DataTables/Responsive](http://github.com/DataTables/Responsive). For issues / bugs, please direct your questions to the [DataTables forums](//datatables.net/forums).
+If you are thinking of contributing code to DataTables, first of all, thank you! All fixes, patches and enhancements to DataTables are very warmly welcomed. This repository is a distribution repo, so patches and issues sent to this repo will not be accepted. Instead, please direct pull requests to the [DataTables/Scroller](http://github.com/DataTables/Scroller). For issues / bugs, please direct your questions to the [DataTables forums](//datatables.net/forums).
 
 
 ## License
