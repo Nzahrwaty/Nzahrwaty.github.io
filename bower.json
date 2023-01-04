@@ -1,19 +1,19 @@
 {
-    "name": "datatables.net",
-    "description": "DataTables for jQuery ",
+    "name": "datatables.net-responsive",
+    "description": "Responsive for DataTables ",
     "main": [
-        "js/jquery.dataTables.js"
+        "js/dataTables.responsive.js"
     ],
     "keywords": [
-        "filter",
-        "sort",
+        "responsive",
         "DataTables",
         "jQuery",
         "table",
         "DataTables"
     ],
     "dependencies": {
-        "jquery": ">=1.7"
+        "jquery": ">=1.7",
+        "datatables.net": ">=1.10.9"
     },
     "moduleType": [
         "globals",
